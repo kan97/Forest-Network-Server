@@ -25,21 +25,21 @@ async function fetchAllBlocks() {
       txs = decode(Buffer.from(res.block.data.txs[0], 'base64'))
       switch (txs.operation) {
         case 'create_account':
-          await userSchema.updateOne({
-            public_key: txs.account
-          }, {
-            $set: {
-              sequence: txs.sequence,
-            }
-          })
-          user = new userSchema({
-            public_key: txs.params.address,
-          })
-          await user.save(function (err) {
-            if (err) {
-              console.log(err)
-            }
-          })
+          // await userSchema.updateOne({
+          //   public_key: txs.account
+          // }, {
+          //   $set: {
+          //     sequence: txs.sequence,
+          //   }
+          // })
+          // user = new userSchema({
+          //   public_key: txs.params.address,
+          // })
+          // await user.save(function (err) {
+          //   if (err) {
+          //     console.log(err)
+          //   }
+          // })
           break;
 
         case 'payment':
@@ -51,8 +51,36 @@ async function fetchAllBlocks() {
           break;
 
         case 'update_account':
+          switch (txs.params.key) {
+            case 'name':
+              await userSchema.updateOne({
+                public_key: txs.account
+              }, {
+                $set: {
+                  sequence: txs.sequence,
+                  name: txs.params.value.toString('utf-8'),
+                }
+              })
+              break;
 
-          break;
+            case 'picture':
+              await userSchema.updateOne({
+                public_key: txs.account
+              }, {
+                $set: {
+                  sequence: txs.sequence,
+                  picture: 'data:image/jpeg;base64,' + txs.params.value.toString('base64'),
+                }
+              })
+              break;
+
+            case 'followings':
+
+              break;
+
+            default:
+              break;
+          }
 
         case 'interact':
 
