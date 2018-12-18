@@ -4,6 +4,7 @@ var Schema = mongoose.Schema;
 
 var UserSchema = new Schema(
   {
+    // unique
     public_key: {type: String, required: true},
     name: {type: String, default: null},
     picture: {type: Buffer, default: null},
