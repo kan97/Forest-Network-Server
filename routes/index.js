@@ -43,7 +43,23 @@ async function fetchAllBlocks() {
           break;
 
         case 'payment':
-
+          await userSchema.updateOne({
+            public_key: txs.account
+          }, {
+            $set: {
+              sequence: txs.sequence,
+            },
+            $inc: {
+              balance: txs.params.amount * (-1),
+            }
+          })
+          await userSchema.updateOne({
+            public_key: txs.params.address
+          }, {
+            $inc: {
+              balance: txs.params.amount,
+            }
+          })
           break;
 
         case 'post':
@@ -52,31 +68,31 @@ async function fetchAllBlocks() {
 
         case 'update_account':
           switch (txs.params.key) {
-            case 'name':
-              await userSchema.updateOne({
-                public_key: txs.account
-              }, {
-                $set: {
-                  sequence: txs.sequence,
-                  name: txs.params.value.toString('utf-8'),
-                }
-              })
-              break;
+            // case 'name':
+            //   await userSchema.updateOne({
+            //     public_key: txs.account
+            //   }, {
+            //     $set: {
+            //       sequence: txs.sequence,
+            //       name: txs.params.value.toString('utf-8'),
+            //     }
+            //   })
+            //   break;
 
-            case 'picture':
-              await userSchema.updateOne({
-                public_key: txs.account
-              }, {
-                $set: {
-                  sequence: txs.sequence,
-                  picture: 'data:image/jpeg;base64,' + txs.params.value.toString('base64'),
-                }
-              })
-              break;
+            // case 'picture':
+            //   await userSchema.updateOne({
+            //     public_key: txs.account
+            //   }, {
+            //     $set: {
+            //       sequence: txs.sequence,
+            //       picture: 'data:image/jpeg;base64,' + txs.params.value.toString('base64'),
+            //     }
+            //   })
+            //   break;
 
-            case 'followings':
+            // case 'followings':
 
-              break;
+            //   break;
 
             default:
               break;
