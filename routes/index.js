@@ -16,7 +16,7 @@ const {
 
 // cách tuần tự
 async function fetchAllBlocks() {
-  for (let index = 1; index < 11000; index++) {
+  for (let index = 7628; index < 11000; index++) {
     res = await client.block({
       height: index
     });
@@ -43,27 +43,46 @@ async function fetchAllBlocks() {
           break;
 
         case 'payment':
-          await userSchema.updateOne({
-            public_key: txs.account
-          }, {
-            $set: {
-              sequence: txs.sequence,
-            },
-            $inc: {
-              balance: txs.params.amount * (-1),
-            }
-          })
-          await userSchema.updateOne({
-            public_key: txs.params.address
-          }, {
-            $inc: {
-              balance: txs.params.amount,
-            }
-          })
+          // await userSchema.updateOne({
+          //   public_key: txs.account
+          // }, {
+          //   $set: {
+          //     sequence: txs.sequence,
+          //   },
+          //   $inc: {
+          //     balance: txs.params.amount * (-1),
+          //   }
+          // })
+          // await userSchema.updateOne({
+          //   public_key: txs.params.address
+          // }, {
+          //   $inc: {
+          //     balance: txs.params.amount,
+          //   }
+          // })
           break;
 
         case 'post':
-
+          try {
+            content = JSON.parse(txs.params.content.toString('utf-8'))
+            if (!content.type) {
+              break
+            }
+            post = new postSchema({
+              public_key: txs.account,
+              content: {
+                type: content.type,
+                text: content.text
+              }
+            })
+            await post.save(function (err) {
+              if (err) {
+                console.log(err)
+              }
+            })
+          } catch (err) {
+            console.log(err);
+          }
           break;
 
         case 'update_account':
