@@ -14,11 +14,11 @@ const {
   decode
 } = require('../lib/tx/index');
 const base32 = require('base32.js');
-const { decodeFollowing } = require('../lib/tx/v1')
+const { decodeFollowing, decodePost } = require('../lib/tx/v1')
 
 // cách tuần tự
 async function fetchAllBlocks() {
-  for (let index = 11980; index < 14300; index++) {
+  for (let index = 1; index < 14300; index++) {
     res = await client.block({
       height: index
     });
@@ -65,26 +65,31 @@ async function fetchAllBlocks() {
           break;
 
         case 'post':
-          // try {
-          //   content = JSON.parse(txs.params.content.toString('utf-8'))
-          //   if (!content.type) {
-          //     break
-          //   }
-          //   post = new postSchema({
-          //     public_key: txs.account,
-          //     content: {
-          //       type: content.type,
-          //       text: content.text
-          //     }
-          //   })
-          //   await post.save(function (err) {
-          //     if (err) {
-          //       console.log(err)
-          //     }
-          //   })
-          // } catch (err) {
-          //   console.log(err);
-          // }
+          try {
+            content = decodePost(txs.params.content)
+            console.log(content);
+            post = new postSchema({
+              public_key: txs.account,
+              content: {
+                type: content.type,
+                text: content.text
+              }
+            })
+            await post.save(function (err) {
+              if (err) {
+                console.log(err)
+              }
+            })
+            await userSchema.updateOne({
+              public_key: txs.account
+            }, {
+              $set: {
+                sequence: txs.sequence,
+              }
+            })
+          } catch (err) {
+            console.log(err);
+          }
           break;
 
         case 'update_account':
