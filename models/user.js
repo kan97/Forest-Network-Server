@@ -8,7 +8,7 @@ var UserSchema = new Schema(
     public_key: {type: String, required: true},
     name: {type: String, default: null},
     picture: {type: Buffer, default: null},
-    followings: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    followings: [{ type: String }],
     sequence: {type: Number, default: 0},
     balance: {type: Number, default: 0},
     // energy

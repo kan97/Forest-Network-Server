@@ -13,10 +13,12 @@ const client = RpcClient('wss://komodo.forest.network:443')
 const {
   decode
 } = require('../lib/tx/index');
+const base32 = require('base32.js');
+const { decodeFollowing } = require('../lib/tx/v1')
 
 // cách tuần tự
 async function fetchAllBlocks() {
-  for (let index = 7628; index < 11000; index++) {
+  for (let index = 11980; index < 14300; index++) {
     res = await client.block({
       height: index
     });
@@ -63,26 +65,26 @@ async function fetchAllBlocks() {
           break;
 
         case 'post':
-          try {
-            content = JSON.parse(txs.params.content.toString('utf-8'))
-            if (!content.type) {
-              break
-            }
-            post = new postSchema({
-              public_key: txs.account,
-              content: {
-                type: content.type,
-                text: content.text
-              }
-            })
-            await post.save(function (err) {
-              if (err) {
-                console.log(err)
-              }
-            })
-          } catch (err) {
-            console.log(err);
-          }
+          // try {
+          //   content = JSON.parse(txs.params.content.toString('utf-8'))
+          //   if (!content.type) {
+          //     break
+          //   }
+          //   post = new postSchema({
+          //     public_key: txs.account,
+          //     content: {
+          //       type: content.type,
+          //       text: content.text
+          //     }
+          //   })
+          //   await post.save(function (err) {
+          //     if (err) {
+          //       console.log(err)
+          //     }
+          //   })
+          // } catch (err) {
+          //   console.log(err);
+          // }
           break;
 
         case 'update_account':
@@ -109,9 +111,25 @@ async function fetchAllBlocks() {
             //   })
             //   break;
 
-            // case 'followings':
-
-            //   break;
+            case 'followings':
+              try {
+                addresses = decodeFollowing(txs.params.value).addresses
+                followings = []
+                for (let index = 0; index < addresses.length; index++) {
+                  followings.push(base32.encode(addresses[index]))
+                }
+                await userSchema.updateOne({
+                  public_key: txs.account
+                }, {
+                  $set: {
+                    sequence: txs.sequence,
+                    followings: followings,
+                  }
+                })
+              } catch (error) {
+                console.log(error);
+              }
+              break;
 
             default:
               break;
