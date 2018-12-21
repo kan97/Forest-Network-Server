@@ -15,33 +15,44 @@ const {
 } = require('../lib/tx/index');
 const base32 = require('base32.js');
 const { decodeFollowing, decodePost } = require('../lib/tx/v1')
+const { calculateEnergy } = require('../helpers/calculate')
 
 // cách tuần tự
 async function fetchAllBlocks() {
-  for (let index = 1; index < 14300; index++) {
+  for (let index = 11001; index < 16075; index++) {
     res = await client.block({
       height: index
     });
     if (res.block.data.txs) {
       console.log(index);
-      txs = decode(Buffer.from(res.block.data.txs[0], 'base64'))
+      base64Txs = Buffer.from(res.block.data.txs[0], 'base64')
+      txs = decode(base64Txs)
+      account = await userSchema.findOne({ public_key: txs.account })
+      currentBlockTime = res.block_meta.header.time
+      await userSchema.updateOne({
+        public_key: txs.account
+      }, {
+        energy: calculateEnergy(account, currentBlockTime, base64Txs.length),
+        bandwidthTime: currentBlockTime,
+      })
+
       switch (txs.operation) {
         case 'create_account':
-          // await userSchema.updateOne({
-          //   public_key: txs.account
-          // }, {
-          //   $set: {
-          //     sequence: txs.sequence,
-          //   }
-          // })
-          // user = new userSchema({
-          //   public_key: txs.params.address,
-          // })
-          // await user.save(function (err) {
-          //   if (err) {
-          //     console.log(err)
-          //   }
-          // })
+          await userSchema.updateOne({
+            public_key: txs.account
+          }, {
+            $set: {
+              sequence: txs.sequence,
+            }
+          })
+          user = new userSchema({
+            public_key: txs.params.address,
+          })
+          await user.save(function (err) {
+            if (err) {
+              console.log(err)
+            }
+          })
           break;
 
         case 'payment':
@@ -65,31 +76,31 @@ async function fetchAllBlocks() {
           break;
 
         case 'post':
-          try {
-            content = decodePost(txs.params.content)
-            console.log(content);
-            post = new postSchema({
-              public_key: txs.account,
-              content: {
-                type: content.type,
-                text: content.text
-              }
-            })
-            await post.save(function (err) {
-              if (err) {
-                console.log(err)
-              }
-            })
-            await userSchema.updateOne({
-              public_key: txs.account
-            }, {
-              $set: {
-                sequence: txs.sequence,
-              }
-            })
-          } catch (err) {
-            console.log(err);
-          }
+          // try {
+          //   content = decodePost(txs.params.content)
+          //   console.log(content);
+          //   post = new postSchema({
+          //     public_key: txs.account,
+          //     content: {
+          //       type: content.type,
+          //       text: content.text
+          //     }
+          //   })
+          //   await post.save(function (err) {
+          //     if (err) {
+          //       console.log(err)
+          //     }
+          //   })
+          //   await userSchema.updateOne({
+          //     public_key: txs.account
+          //   }, {
+          //     $set: {
+          //       sequence: txs.sequence,
+          //     }
+          //   })
+          // } catch (err) {
+          //   console.log(err);
+          // }
           break;
 
         case 'update_account':
@@ -117,23 +128,23 @@ async function fetchAllBlocks() {
             //   break;
 
             case 'followings':
-              try {
-                addresses = decodeFollowing(txs.params.value).addresses
-                followings = []
-                for (let index = 0; index < addresses.length; index++) {
-                  followings.push(base32.encode(addresses[index]))
-                }
-                await userSchema.updateOne({
-                  public_key: txs.account
-                }, {
-                  $set: {
-                    sequence: txs.sequence,
-                    followings: followings,
-                  }
-                })
-              } catch (error) {
-                console.log(error);
-              }
+              // try {
+              //   addresses = decodeFollowing(txs.params.value).addresses
+              //   followings = []
+              //   for (let index = 0; index < addresses.length; index++) {
+              //     followings.push(base32.encode(addresses[index]))
+              //   }
+              //   await userSchema.updateOne({
+              //     public_key: txs.account
+              //   }, {
+              //     $set: {
+              //       sequence: txs.sequence,
+              //       followings: followings,
+              //     }
+              //   })
+              // } catch (error) {
+              //   console.log(error);
+              // }
               break;
 
             default:

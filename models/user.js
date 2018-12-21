@@ -11,7 +11,8 @@ var UserSchema = new Schema(
     followings: [{ type: String }],
     sequence: {type: Number, default: 0},
     balance: {type: Number, default: 0},
-    // energy
+    energy: {type: Number},
+    bandwidthTime: {type: Date, default: null},
     transactions: {type: Number, default: 1},
   }
 );
