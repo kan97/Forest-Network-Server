@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 const asyncLock = require('async-lock');
-let lock = new asyncLock();
+let lockCurrBlock = new asyncLock();
 
 const db = require('../connections/mongodb')
 const userSchema = require('../models/user')
@@ -36,17 +36,16 @@ const subscribeHandler = async (event) => {
     return;
   }
 
-  lock.acquire('')
-  lock.acquire('Current-Block-Mutex', function () {
-    let promise = new Promise((resolve) => {
-      setTimeout(() => {
-        const getNow = new Date().getTime().toString();
-        resolve(getNow);
-      }, 1);
-    });
+  if (lockCurrBlock.isBusy()) {
+    return;
+  }
 
-    return promise;
-  }).then(function (result) {
+  let blockSyncFunction = () => {
+    
+    return Promise.resolve(true);
+  };
+
+  lockCurrBlock.acquire('Current-Block-Mutex', blockSyncFunction).then(function (result) {
     return result;
   });
 };
