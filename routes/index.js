@@ -1,9 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
+const asyncLock = require('async-lock');
+let lock = new asyncLock();
+
 const db = require('../connections/mongodb')
 const userSchema = require('../models/user')
 const postSchema = require('../models/post')
+const blockSchema = require('../models/block')
 
 const {
   RpcClient
@@ -14,8 +18,43 @@ const {
   decode
 } = require('../lib/tx/index');
 const base32 = require('base32.js');
-const { decodeFollowing, decodePost } = require('../lib/tx/v1')
-const { calculateEnergy } = require('../helpers/calculate')
+const {
+  decodeFollowing,
+  decodePost
+} = require('../lib/tx/v1')
+const {
+  calculateEnergy
+} = require('../helpers/calculate')
+
+//---------------------------------------------------
+const subscribeHandler = async (event) => {
+  let currBlockAll = await blockSchema.find();
+  let currBlockObj = currBlockAll.length > 0 ? currBlockAll[0] : false;
+
+  if (!currBlockObj || typeof currBlockObj.currBlock != 'Number') {
+    console.log('Find nothing');
+    return;
+  }
+
+  lock.acquire('')
+  lock.acquire('Current-Block-Mutex', function () {
+    let promise = new Promise((resolve) => {
+      setTimeout(() => {
+        const getNow = new Date().getTime().toString();
+        resolve(getNow);
+      }, 1);
+    });
+
+    return promise;
+  }).then(function (result) {
+    return result;
+  });
+};
+//---------------------------------------------------
+
+client.subscribe({
+  query: "tm.event='NewBlock'"
+}, subscribeHandler).catch(e => console.log("ERR", e))
 
 // cách tuần tự
 async function fetchAllBlocks() {
@@ -27,7 +66,9 @@ async function fetchAllBlocks() {
       console.log(index);
       base64Txs = Buffer.from(res.block.data.txs[0], 'base64')
       txs = decode(base64Txs)
-      account = await userSchema.findOne({ public_key: txs.account })
+      account = await userSchema.findOne({
+        public_key: txs.account
+      })
       currentBlockTime = res.block_meta.header.time
       await userSchema.updateOne({
         public_key: txs.account
