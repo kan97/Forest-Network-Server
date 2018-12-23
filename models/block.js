@@ -4,7 +4,8 @@ var Schema = mongoose.Schema;
 
 var BlockSchema = new Schema(
   {
-    currBlock: {type: Number}
+    currBlock: {type: Number},
+    key: {type:String}
   }
 );
 
